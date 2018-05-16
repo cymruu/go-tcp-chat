@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/gob"
+	"errors"
+	"fmt"
 )
 
 const (
@@ -51,7 +53,23 @@ func (p *Packet) ToBytes() []byte {
 func (p *Packet) ToBytesFast() []byte {
 	dataBytes := packetToBytes(p.Data)
 	buff := make([]byte, headerSize+len(dataBytes))
-	copy(buff[:4], p.CreateHeader())
-	copy(buff[4:], dataBytes)
+	copy(buff[:headerSize], p.CreateHeader())
+	copy(buff[headerSize:], dataBytes)
 	return buff
+}
+func FromBytes(msgType uint16, databytes []byte) (Packet, error) {
+	dec := gob.NewDecoder(bytes.NewReader(databytes))
+	p := Packet{MsgType: msgType}
+	switch msgType {
+	case 2:
+		var received Message
+		err := dec.Decode(&received)
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+		p.Data = &received
+	default:
+		return p, errors.New("Corrupted packet")
+	}
+	return p, nil
 }

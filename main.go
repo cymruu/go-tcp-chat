@@ -22,6 +22,8 @@ func client() {
 	p := msg.CreatePacket()
 	fmt.Print(p.CreateHeader())
 	client.Write(p.ToBytesFast())
+	time.Sleep(time.Second)
+	client.Write(p.ToBytesFast())
 	client.Close()
 }
 func main() {

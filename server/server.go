@@ -3,8 +3,8 @@ package server
 import (
 	"bufio"
 	"chat2/packets"
-	"encoding/gob"
 	"fmt"
+	"io"
 	"net"
 )
 
@@ -34,25 +34,22 @@ func (s *Server) handleConnection(conn *net.Conn) {
 	fmt.Printf("Hadling new connection %p\n", conn)
 	fmt.Printf("connections %v\n", s.connnections)
 	rw := bufio.NewReadWriter(bufio.NewReader(*conn), bufio.NewWriter(*conn))
-	dec := gob.NewDecoder(rw)
 	for {
 		header := make([]byte, 4)
 		_, err := rw.Read(header)
-		if err != nil {
-			fmt.Print(err.Error())
+		if err == io.EOF {
 			continue
 		}
 		msgSize, msgType := packets.ReadHeader(header)
 		fmt.Printf("Received packet length: %v Type: %d\n", msgSize, msgType)
-		// data := make([]byte, dataLength)
-		// rw.Read(data)
-		// fmt.Printf("received packet... %v", data)
-		var packet packets.Message
-		err = dec.Decode(&packet)
+		buff := make([]byte, msgSize)
+		_, err = rw.Read(buff)
 		if err != nil {
-			fmt.Printf("Error while decoding packet %s", err.Error())
+			fmt.Printf("Error while reading packet data %s", err.Error())
 		}
-		fmt.Println(packet)
+		recvPacket, err := packets.FromBytes(msgType, buff)
+		fmt.Print(recvPacket)
+		fmt.Print(recvPacket.Data)
 	}
 }
 func CreateServer() *Server {
