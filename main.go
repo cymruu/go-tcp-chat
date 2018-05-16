@@ -20,8 +20,7 @@ func client() {
 		Time:     time.Now(),
 	}
 	p := msg.CreatePacket()
-	fmt.Printf("%+v", p.ToBytes())
-	fmt.Printf("%+v", p.ToBytesFast())
+	fmt.Print(p.CreateHeader())
 	client.Write(p.ToBytesFast())
 	client.Close()
 }
