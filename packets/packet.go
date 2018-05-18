@@ -16,51 +16,59 @@ type IPacket interface {
 	ToBytes() []byte
 }
 type header struct {
-	Size uint16
+	Size    uint16
+	MsgType uint16
 }
 type Packet struct {
-	header  header
-	MsgType uint16
-	Data    IPacket
+	header header
+	Data   IPacket
 }
 
+func (h *header) ToBytes() []byte {
+	buff := make([]byte, headerSize)
+	binary.BigEndian.PutUint16(buff[0:2], h.Size)
+	binary.BigEndian.PutUint16(buff[2:4], h.MsgType)
+	return buff
+}
 func packetToBytes(p IPacket) []byte {
 	data := new(bytes.Buffer)
 	enc := gob.NewEncoder(data)
 	enc.Encode(p)
 	return data.Bytes()
 }
-func ReadHeader(header []byte) (uint16, uint16) {
-	return binary.BigEndian.Uint16(header[:2]), binary.BigEndian.Uint16(header[2:4])
-}
-func (p *Packet) CreateHeader() []byte {
-	if p.header.Size == 0 {
-		p.header.Size = uint16(len(p.Data.ToBytes()))
+func ReadHeader(headerBytes []byte) header {
+	return header{
+		Size:    binary.BigEndian.Uint16(headerBytes[:2]),
+		MsgType: binary.BigEndian.Uint16(headerBytes[2:4]),
 	}
-	buff := make([]byte, headerSize)
-	binary.BigEndian.PutUint16(buff[:2], p.header.Size)
-	binary.BigEndian.PutUint16(buff[2:], p.MsgType)
-	return buff
 }
 func (p *Packet) ToBytes() []byte {
 	buf := new(bytes.Buffer)
 	dataBytes := packetToBytes(p.Data)
 	p.header.Size = uint16(len(dataBytes))
-	buf.Write(p.CreateHeader())
+	buf.Write(p.header.ToBytes())
 	buf.Write(dataBytes)
 	return buf.Bytes()
 }
 func (p *Packet) ToBytesFast() []byte {
 	dataBytes := packetToBytes(p.Data)
+	p.header.Size = uint16(len(dataBytes))
 	buff := make([]byte, headerSize+len(dataBytes))
-	copy(buff[:headerSize], p.CreateHeader())
+	copy(buff[:headerSize], p.header.ToBytes())
 	copy(buff[headerSize:], dataBytes)
 	return buff
 }
-func FromBytes(msgType uint16, databytes []byte) (Packet, error) {
+func FromBytes(header header, databytes []byte) (Packet, error) {
 	dec := gob.NewDecoder(bytes.NewReader(databytes))
-	p := Packet{MsgType: msgType}
-	switch msgType {
+	p := Packet{header: header}
+	switch header.MsgType {
+	case 1:
+		var received Authorization
+		err := dec.Decode(&received)
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+		p.Data = &received
 	case 2:
 		var received Message
 		err := dec.Decode(&received)

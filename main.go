@@ -3,6 +3,7 @@ package main
 import (
 	"chat2/packets"
 	"chat2/server"
+	"crypto/md5"
 	"fmt"
 	"net"
 	"time"
@@ -14,13 +15,18 @@ func client() {
 	if err != nil {
 		fmt.Print(err.Error())
 	}
+	t, _ := time.Now().MarshalBinary()
+	auth := &packets.Authorization{
+		Username: "filipek",
+		Token:    fmt.Sprintf("%x", md5.Sum(t)),
+	}
 	msg := &packets.Message{
 		Username: "filip",
 		Message:  "czesc",
 		Time:     time.Now(),
 	}
 	p := msg.CreatePacket()
-	fmt.Print(p.CreateHeader())
+	client.Write(auth.CreatePacket().ToBytes())
 	client.Write(p.ToBytesFast())
 	time.Sleep(time.Second)
 	client.Write(p.ToBytesFast())

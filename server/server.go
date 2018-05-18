@@ -40,16 +40,16 @@ func (s *Server) handleConnection(conn *net.Conn) {
 		if err == io.EOF {
 			continue
 		}
-		msgSize, msgType := packets.ReadHeader(header)
-		fmt.Printf("Received packet length: %v Type: %d\n", msgSize, msgType)
-		buff := make([]byte, msgSize)
+		msgHeader := packets.ReadHeader(header)
+		fmt.Printf("Received packet length: %v Type: %d\n", msgHeader.Size, msgHeader.MsgType)
+		buff := make([]byte, msgHeader.Size)
 		_, err = rw.Read(buff)
 		if err != nil {
 			fmt.Printf("Error while reading packet data %s", err.Error())
 		}
-		recvPacket, err := packets.FromBytes(msgType, buff)
-		fmt.Print(recvPacket)
-		fmt.Print(recvPacket.Data)
+		recvPacket, err := packets.FromBytes(msgHeader, buff)
+		fmt.Println(recvPacket)
+		fmt.Println(recvPacket.Data)
 	}
 }
 func CreateServer() *Server {

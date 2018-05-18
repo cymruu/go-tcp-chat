@@ -15,7 +15,7 @@ func (m *Message) ToBytes() []byte {
 }
 func (m *Message) CreatePacket() *Packet {
 	return &Packet{
-		MsgType: 2,
-		Data:    m,
+		header: header{MsgType: 2},
+		Data:   m,
 	}
 }
