@@ -11,7 +11,8 @@ import (
 type Server struct {
 	listener     net.Listener
 	connnections []*net.Conn
-	incoming     []packets.IPacket
+	incoming     chan packets.IPacket
+	quitChannel  chan bool
 }
 
 func (s *Server) Listen(addr string) error {
@@ -21,6 +22,7 @@ func (s *Server) Listen(addr string) error {
 		return err
 	}
 	fmt.Printf("Server started [%s]... waiting for connections\n", s.listener.Addr())
+	go s.readMessages()
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
@@ -28,6 +30,16 @@ func (s *Server) Listen(addr string) error {
 		}
 		s.connnections = append(s.connnections, &conn)
 		go s.handleConnection(&conn)
+	}
+}
+func (s *Server) readMessages() {
+	for {
+		select {
+		case msg := <-s.incoming:
+			fmt.Printf("Channel handler received message %+v \n", msg)
+		case <-s.quitChannel:
+			return
+		}
 	}
 }
 func (s *Server) handleConnection(conn *net.Conn) {
@@ -50,8 +62,12 @@ func (s *Server) handleConnection(conn *net.Conn) {
 		recvPacket, err := packets.FromBytes(msgHeader, buff)
 		fmt.Println(recvPacket)
 		fmt.Println(recvPacket.Data)
+		s.incoming <- &recvPacket
 	}
 }
 func CreateServer() *Server {
-	return &Server{}
+	return &Server{
+		incoming:    make(chan packets.IPacket),
+		quitChannel: make(chan bool, 1),
+	}
 }
