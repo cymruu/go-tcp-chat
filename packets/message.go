@@ -11,11 +11,11 @@ type Message struct {
 }
 
 func (m *Message) ToBytes() []byte {
-	return packetToBytes(m)
+	return dataToBytes(m)
 }
 func (m *Message) CreatePacket() *Packet {
 	return &Packet{
-		MsgType: 2,
-		Data:    m,
+		Header: header{MsgType: 2},
+		Data:   m,
 	}
 }
