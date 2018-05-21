@@ -20,7 +20,7 @@ type header struct {
 	MsgType uint16
 }
 type Packet struct {
-	header header
+	Header header
 	Data   IPacket
 }
 
@@ -45,22 +45,22 @@ func ReadHeader(headerBytes []byte) header {
 func (p *Packet) ToBytes() []byte {
 	buf := new(bytes.Buffer)
 	dataBytes := packetToBytes(p.Data)
-	p.header.Size = uint16(len(dataBytes))
-	buf.Write(p.header.ToBytes())
+	p.Header.Size = uint16(len(dataBytes))
+	buf.Write(p.Header.ToBytes())
 	buf.Write(dataBytes)
 	return buf.Bytes()
 }
 func (p *Packet) ToBytesFast() []byte {
 	dataBytes := packetToBytes(p.Data)
-	p.header.Size = uint16(len(dataBytes))
+	p.Header.Size = uint16(len(dataBytes))
 	buff := make([]byte, headerSize+len(dataBytes))
-	copy(buff[:headerSize], p.header.ToBytes())
+	copy(buff[:headerSize], p.Header.ToBytes())
 	copy(buff[headerSize:], dataBytes)
 	return buff
 }
 func FromBytes(header header, databytes []byte) (Packet, error) {
 	dec := gob.NewDecoder(bytes.NewReader(databytes))
-	p := Packet{header: header}
+	p := Packet{Header: header}
 	switch header.MsgType {
 	case 1:
 		var received Authorization

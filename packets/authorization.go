@@ -10,7 +10,7 @@ func (a *Authorization) ToBytes() []byte {
 }
 func (a *Authorization) CreatePacket() *Packet {
 	return &Packet{
-		header: header{MsgType: 1},
+		Header: header{MsgType: 1},
 		Data:   a,
 	}
 }
