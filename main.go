@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"chat2/packets"
 	"chat2/server"
 	"crypto/md5"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"time"
 )
@@ -30,9 +32,17 @@ func client() {
 	client.Write(p.ToBytesFast())
 	time.Sleep(time.Second)
 	client.Write(p.ToBytesFast())
+	reader := bufio.NewReader(client)
+	data, _ := ioutil.ReadAll(reader)
+	fmt.Print(data)
 	client.Close()
 }
+func startServer() {
+	srv := server.CreateServer()
+	srv.Listen(":3300")
+}
 func main() {
+	go startServer()
 	go client()
 	srv := server.CreateServer()
 	srv.Listen(":3300")
