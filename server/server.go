@@ -22,10 +22,7 @@ func MessageFunction(s *Server, sm *SocketMessage) {
 		return
 	}
 	fmt.Printf("Received message %v\n", msg)
-	for _, c := range s.connnections {
-		fmt.Printf("Sending msg to %s\n", c.Username)
-		c.conn.Write(msg.CreatePacket().ToBytesFast())
-	}
+	s.broadcast(sm.msg.Data)
 }
 func AuthorizationFunction(s *Server, sm *SocketMessage) {
 	msg, ok := sm.msg.Data.(*packets.Authorization)
@@ -81,7 +78,6 @@ func (s *Server) readMessages() {
 }
 func (s *Server) handleConnection(conn net.Conn) {
 	fmt.Printf("Hadling new connection %p\n", conn)
-	fmt.Printf("connections %v\n", s.connnections)
 	rw := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 	client := &Client{conn: conn}
 	s.connnections = append(s.connnections, client)
@@ -98,8 +94,18 @@ func (s *Server) handleConnection(conn net.Conn) {
 			fmt.Printf("Error while reading packet data %s", err.Error())
 		}
 		recvPacket, err := packets.FromBytes(msgHeader, buff)
-		sm := SocketMessage{c: client, msg: recvPacket}
-		s.incoming <- sm
+		if err == nil {
+			sm := SocketMessage{c: client, msg: recvPacket}
+			s.incoming <- sm
+		}
+	}
+}
+func (s *Server) broadcast(packet packets.IPacketData) {
+	for _, c := range s.connnections {
+		if len(c.Username) > 0 { //send only to authorized clients
+			fmt.Printf("Sending msg to %s\n", c.Username)
+			c.sendData(packet)
+		}
 	}
 }
 func CreateServer() *Server {

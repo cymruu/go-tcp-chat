@@ -14,3 +14,6 @@ type Client struct {
 func (c *Client) send(packet packets.IPacket) {
 	c.conn.Write(packet.ToBytes())
 }
+func (c *Client) sendData(packet packets.IPacketData) {
+	c.conn.Write(packet.CreatePacket().ToBytes())
+}

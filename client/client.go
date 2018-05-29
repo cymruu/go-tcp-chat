@@ -20,7 +20,7 @@ type Client struct {
 
 func (c *Client) readString() string {
 	text, _ := c.reader.ReadString('\n')
-	return text
+	return text[:len(text)-2] //remove last two bytes which are \r\n
 }
 func startClient() (*Client, error) {
 	connection, err := net.Dial("tcp", ":3300")
@@ -35,7 +35,7 @@ func startClient() (*Client, error) {
 	}, nil
 }
 func (c *Client) login() {
-	fmt.Printf("Please insert your username: ")
+	fmt.Printf("Please enter your username: ")
 	username := c.readString()
 	c.Username = username
 	t, _ := time.Now().MarshalBinary()
@@ -69,7 +69,6 @@ func (c *Client) packetHandler() {
 	for {
 		select {
 		case packet := <-c.recv:
-			fmt.Printf("Channel handler received message %+v \n", packet)
 			switch packet.Header.MsgType {
 			case 2:
 				msg, ok := packet.Data.(*packets.Message)
