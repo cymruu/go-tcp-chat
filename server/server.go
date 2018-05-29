@@ -22,7 +22,18 @@ func MessageFunction(s *Server, sm *SocketMessage) {
 		return
 	}
 	fmt.Printf("Received message %v\n", msg)
-	s.broadcast(sm.msg.Data)
+	if msg.Message == "/quit" {
+		for i, c := range s.connnections {
+			if c == sm.c {
+				s.connnections = append(s.connnections[:i], s.connnections[i+1:]...)
+				c.conn.Close()
+				leftMessage := packets.SystemMessage{Message: fmt.Sprintf("%s has left", c.Username)}
+				s.broadcast(&leftMessage)
+			}
+		}
+		return
+	}
+	s.broadcast(msg)
 }
 func AuthorizationFunction(s *Server, sm *SocketMessage) {
 	msg, ok := sm.msg.Data.(*packets.Authorization)
@@ -33,6 +44,8 @@ func AuthorizationFunction(s *Server, sm *SocketMessage) {
 	fmt.Printf("Authorizing socket as %s\n", msg.Username)
 	sm.c.Username = msg.Username
 	sm.c.Token = msg.Token
+	welcomeMessage := packets.SystemMessage{Message: fmt.Sprintf("%p is now known as %s", sm.c, sm.c.Username)}
+	s.broadcast(&welcomeMessage)
 	return
 }
 
@@ -83,8 +96,8 @@ func (s *Server) handleConnection(conn net.Conn) {
 	s.connnections = append(s.connnections, client)
 	for {
 		header := make([]byte, 4)
-		r, err := rw.Read(header)
-		if err == io.EOF || r != 4 {
+		_, err := rw.Read(header)
+		if err == io.EOF {
 			return
 		}
 		msgHeader := packets.ReadHeader(header)
@@ -92,6 +105,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 		_, err = rw.Read(buff)
 		if err != nil {
 			fmt.Printf("Error while reading packet data %s", err.Error())
+			conn.Close()
 		}
 		recvPacket, err := packets.FromBytes(msgHeader, buff)
 		if err == nil {
@@ -103,7 +117,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 func (s *Server) broadcast(packet packets.IPacketData) {
 	for _, c := range s.connnections {
 		if len(c.Username) > 0 { //send only to authorized clients
-			fmt.Printf("Sending msg to %s\n", c.Username)
+			fmt.Printf("Sending msg %v to %s\n", packet, c.Username)
 			c.sendData(packet)
 		}
 	}

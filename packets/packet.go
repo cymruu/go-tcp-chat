@@ -83,6 +83,13 @@ func FromBytes(header header, databytes []byte) (Packet, error) {
 			fmt.Print(err.Error())
 		}
 		p.Data = &received
+	case 3:
+		var received SystemMessage
+		err := dec.Decode(&received)
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+		p.Data = &received
 	default:
 		return p, errors.New("Corrupted packet")
 	}

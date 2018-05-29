@@ -18,6 +18,9 @@ type Client struct {
 	recv     chan packets.Packet
 }
 
+func formatTime(t time.Time) string {
+	return t.Format("15:05")
+}
 func (c *Client) readString() string {
 	text, _ := c.reader.ReadString('\n')
 	return text[:len(text)-2] //remove last two bytes which are \r\n
@@ -74,12 +77,16 @@ func (c *Client) packetHandler() {
 				msg, ok := packet.Data.(*packets.Message)
 				//received message
 				if ok {
-					fmt.Printf(">>>[%s]: %s\n", msg.Username, msg.Message)
+					fmt.Printf(">>>%s [%s]: %s\n", formatTime(msg.Time), msg.Username, msg.Message)
+				}
+			case 3:
+				msg, ok := packet.Data.(*packets.SystemMessage)
+				if ok {
+					fmt.Printf("---\t%s %s\t---\n", formatTime(msg.Time), msg.Message)
 				}
 			}
 		}
 	}
-
 }
 func main() {
 	client, err := startClient()
@@ -94,4 +101,5 @@ func main() {
 	for command != "/quit" {
 		command = client.chat()
 	}
+	client.conn.Close()
 }
