@@ -42,8 +42,8 @@ func startServer() {
 	srv.Listen(":3300")
 }
 func main() {
-	go startServer()
-	go client()
+	// go startServer()
+	// go client()
 	srv := server.CreateServer()
 	srv.Listen(":3300")
 }

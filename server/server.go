@@ -22,15 +22,8 @@ func MessageFunction(s *Server, sm *SocketMessage) {
 		return
 	}
 	fmt.Printf("Received message %v\n", msg)
-	if msg.Message == "/quit" {
-		for i, c := range s.connnections {
-			if c == sm.c {
-				s.connnections = append(s.connnections[:i], s.connnections[i+1:]...)
-				c.conn.Close()
-				leftMessage := packets.SystemMessage{Message: fmt.Sprintf("%s has left", c.Username)}
-				s.broadcast(&leftMessage)
-			}
-		}
+	if len(msg.Message) > 0 && msg.Message[:1] == "/" {
+		s.handleCommand(sm.c, msg)
 		return
 	}
 	s.broadcast(msg)
