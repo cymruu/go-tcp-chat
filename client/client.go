@@ -19,7 +19,7 @@ type Client struct {
 }
 
 func formatTime(t time.Time) string {
-	return t.Format("15:05")
+	return t.Format("15:04")
 }
 func (c *Client) readString() string {
 	text, _ := c.reader.ReadString('\n')
