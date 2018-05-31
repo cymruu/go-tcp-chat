@@ -45,5 +45,6 @@ func main() {
 	// go startServer()
 	// go client()
 	srv := server.CreateServer()
+	srv.CreateChannel("main")
 	srv.Listen(":3300")
 }

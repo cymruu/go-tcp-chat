@@ -14,7 +14,7 @@ func handleQuit(s *Server, c *Client, args ...string) {
 	for i, cli := range s.connnections {
 		if c == cli {
 			s.connnections = append(s.connnections[:i], s.connnections[i+1:]...)
-			s.broadcast(&packets.SystemMessage{Message: fmt.Sprintf("%s has left", c.Username)})
+			s.broadcast(&packets.SystemMessage{Message: fmt.Sprintf("%s has disconnected", c.Username)})
 			c.conn.Close()
 		}
 	}
@@ -38,12 +38,33 @@ func handleRoll(s *Server, c *Client, argsD ...string) {
 		fmt.Println(roll)
 		s.broadcast(&packets.SystemMessage{Message: fmt.Sprintf("%s uses the dice and rolls %d", c.Username, roll)})
 	}
+}
+func handleJoin(s *Server, c *Client, argsD ...string) {
+	args := []string{""}
+	copy(args, argsD)
+	channelName := args[0]
+	channel, ok := s.channels[channelName]
+	if !ok {
+		channel = s.CreateChannel(channelName)
+	}
+	channel.join(c)
+}
 
+func handleLeave(s *Server, c *Client, argsD ...string) {
+	args := []string{""}
+	copy(args, argsD)
+	channelName := args[0]
+	channel, ok := s.channels[channelName]
+	if ok {
+		channel.leave(c)
+	}
 }
 
 var commandHandlers = map[string]commandHandler{
-	"quit": handleQuit,
-	"roll": handleRoll,
+	"quit":  handleQuit,
+	"roll":  handleRoll,
+	"join":  handleJoin,
+	"leave": handleLeave,
 }
 
 func (s *Server) handleCommand(c *Client, msg *packets.Message) {

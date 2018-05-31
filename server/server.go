@@ -44,6 +44,7 @@ func AuthorizationFunction(s *Server, sm *SocketMessage) {
 
 type Server struct {
 	listener     net.Listener
+	channels     map[string]*Channel
 	connnections []*Client
 	incoming     chan SocketMessage
 	quitChannel  chan bool
@@ -87,6 +88,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 	rw := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 	client := &Client{conn: conn}
 	s.connnections = append(s.connnections, client)
+	s.channels["main"].join(client)
 	for {
 		header := make([]byte, 4)
 		_, err := rw.Read(header)
@@ -115,8 +117,13 @@ func (s *Server) broadcast(packet packets.IPacketData) {
 		}
 	}
 }
+func (s *Server) CreateChannel(name string) *Channel {
+	s.channels[name] = &Channel{name: name}
+	return s.channels[name]
+}
 func CreateServer() *Server {
 	return &Server{
+		channels:    make(map[string]*Channel),
 		incoming:    make(chan SocketMessage),
 		quitChannel: make(chan bool, 1),
 	}
