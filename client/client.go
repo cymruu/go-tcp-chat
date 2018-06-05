@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -17,6 +18,8 @@ type Client struct {
 	Username string
 	recv     chan packets.Packet
 }
+
+var activeChannel = "main"
 
 func formatTime(t time.Time) string {
 	return t.Format("15:04")
@@ -38,8 +41,11 @@ func startClient() (*Client, error) {
 	}, nil
 }
 func (c *Client) login() {
-	fmt.Printf("Please enter your username: ")
-	username := c.readString()
+	username := ""
+	for username == "" {
+		fmt.Printf("Please enter your username: ")
+		username = c.readString()
+	}
 	c.Username = username
 	t, _ := time.Now().MarshalBinary()
 	loginPacket := packets.Authorization{Username: c.Username, Token: fmt.Sprintf("%x", md5.Sum(t))}
@@ -64,8 +70,6 @@ func (c *Client) packetReceiver() {
 }
 func (c *Client) chat() string {
 	cmd := c.readString()
-	msg := packets.Message{Username: c.Username, Message: cmd, Time: time.Now()}
-	c.conn.Write(msg.CreatePacket().ToBytesFast())
 	return cmd
 }
 func (c *Client) packetHandler() {
@@ -77,7 +81,7 @@ func (c *Client) packetHandler() {
 				msg, ok := packet.Data.(*packets.Message)
 				//received message
 				if ok {
-					fmt.Printf(">>>%s [%s]: %s\n", formatTime(msg.Time), msg.Username, msg.Message)
+					fmt.Printf("[%s] %s >>> %s: %s\n", formatTime(msg.Time), msg.Username, msg.Channel, msg.Message)
 				}
 			case 3:
 				msg, ok := packet.Data.(*packets.SystemMessage)
@@ -87,6 +91,19 @@ func (c *Client) packetHandler() {
 			}
 		}
 	}
+}
+func handleCommand(command string, args ...string) bool {
+	switch command {
+	case "channel":
+		if len(args) == 0 {
+			fmt.Printf("Active channel: %s\n", activeChannel)
+		} else {
+			activeChannel = args[0]
+			fmt.Printf("Switched to channel: %s\n", activeChannel)
+		}
+		return true
+	}
+	return false
 }
 func main() {
 	client, err := startClient()
@@ -100,6 +117,16 @@ func main() {
 	var command string
 	for command != "/quit" {
 		command = client.chat()
+		var ok bool
+		if len(command) > 0 && command[:1] == "/" {
+			parsed := strings.Split(command, " ")
+			command, args := parsed[0][1:], parsed[1:]
+			ok = handleCommand(command, args...)
+		}
+		if !ok {
+			msg := packets.Message{Username: client.Username, Message: command, Time: time.Now(), Channel: activeChannel}
+			client.conn.Write(msg.CreatePacket().ToBytesFast())
+		}
 	}
 	client.conn.Close()
 }

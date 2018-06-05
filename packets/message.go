@@ -8,6 +8,7 @@ type Message struct {
 	Username string
 	Message  string
 	Time     time.Time
+	Channel  string
 }
 
 func (m *Message) ToBytes() []byte {

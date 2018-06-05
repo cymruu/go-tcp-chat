@@ -7,6 +7,7 @@ import (
 type SystemMessage struct {
 	Message string
 	Time    time.Time
+	Channel string
 }
 
 func (m *SystemMessage) ToBytes() []byte {

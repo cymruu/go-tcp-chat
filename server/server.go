@@ -26,7 +26,12 @@ func MessageFunction(s *Server, sm *SocketMessage) {
 		s.handleCommand(sm.c, msg)
 		return
 	}
-	s.broadcast(msg)
+	channel, ok := s.channels[msg.Channel]
+	if ok {
+		channel.broadcast(msg)
+	} else {
+		sm.c.sendData(&packets.SystemMessage{Message: fmt.Sprintf("%s channel doesn't exists you can create the channel with command /join %s", msg.Channel, msg.Channel)})
+	}
 }
 func AuthorizationFunction(s *Server, sm *SocketMessage) {
 	msg, ok := sm.msg.Data.(*packets.Authorization)
@@ -35,6 +40,13 @@ func AuthorizationFunction(s *Server, sm *SocketMessage) {
 		return
 	}
 	fmt.Printf("Authorizing socket as %s\n", msg.Username)
+	for _, client := range s.connnections {
+		if client.Username == msg.Username {
+			sm.c.sendData(&packets.SystemMessage{Message: fmt.Sprintf("%s is already reserved, please connect again and choose another")})
+			sm.c.conn.Close()
+			return
+		}
+	}
 	sm.c.Username = msg.Username
 	sm.c.Token = msg.Token
 	welcomeMessage := packets.SystemMessage{Message: fmt.Sprintf("%p is now known as %s", sm.c, sm.c.Username)}
