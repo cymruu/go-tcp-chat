@@ -87,7 +87,7 @@ func (c *Client) packetHandler() {
 			case 3:
 				msg, ok := packet.Data.(*packets.SystemMessage)
 				if ok {
-					fmt.Printf("---\t%s %s\t---\n", formatTime(msg.Time), msg.Message)
+					fmt.Printf("[%s] {{{SystemMessage}}}: %s}}}\n", formatTime(msg.Time), msg.Message)
 				}
 			}
 		}
