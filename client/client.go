@@ -56,6 +56,7 @@ func (c *Client) packetReceiver() {
 		header := make([]byte, 4)
 		r, err := c.conn.Read(header)
 		if err == io.EOF || r != 4 {
+			fmt.Printf("Server closed the connection...\n")
 			return
 		}
 		msgHeader := packets.ReadHeader(header)

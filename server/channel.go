@@ -16,7 +16,7 @@ func (c *Channel) join(client *Client) {
 		clientName = "unknown"
 	}
 	for _, participant := range c.participants {
-		if client.Username == participant.Username {
+		if client == participant {
 			client.sendData(&packets.SystemMessage{Message: fmt.Sprintf("You are already listening in this room")})
 			return
 		}

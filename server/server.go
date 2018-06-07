@@ -30,7 +30,7 @@ func MessageFunction(s *Server, sm *SocketMessage) {
 	if ok {
 		channel.broadcast(msg)
 	} else {
-		sm.c.sendData(&packets.SystemMessage{Message: fmt.Sprintf("%s channel doesn't exists you can create the channel with command /join %s", msg.Channel, msg.Channel)})
+		sm.c.sendData(&packets.SystemMessage{Message: fmt.Sprintf("%s channel doesn't exists you can create the channel using command /join %s", msg.Channel, msg.Channel)})
 	}
 }
 func AuthorizationFunction(s *Server, sm *SocketMessage) {
@@ -42,7 +42,7 @@ func AuthorizationFunction(s *Server, sm *SocketMessage) {
 	fmt.Printf("Authorizing socket as %s\n", msg.Username)
 	for _, client := range s.connnections {
 		if client.Username == msg.Username {
-			sm.c.sendData(&packets.SystemMessage{Message: fmt.Sprintf("%s is already reserved, please connect again and choose another")})
+			sm.c.sendData(&packets.SystemMessage{Message: fmt.Sprintf("%s is already reserved, please connect again and choose another", msg.Username)})
 			sm.c.conn.Close()
 			return
 		}
@@ -59,7 +59,6 @@ type Server struct {
 	channels     map[string]*Channel
 	connnections []*Client
 	incoming     chan SocketMessage
-	quitChannel  chan bool
 }
 type SocketMessage struct {
 	c   *Client
@@ -77,7 +76,7 @@ func (s *Server) Listen(addr string) error {
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
-			fmt.Printf("%s\n", err.Error())
+			fmt.Println(err.Error())
 		}
 		go s.handleConnection(conn)
 	}
@@ -105,6 +104,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 		header := make([]byte, 4)
 		_, err := rw.Read(header)
 		if err == io.EOF {
+			client.conn.Close()
 			return
 		}
 		msgHeader := packets.ReadHeader(header)
@@ -135,8 +135,7 @@ func (s *Server) CreateChannel(name string) *Channel {
 }
 func CreateServer() *Server {
 	return &Server{
-		channels:    make(map[string]*Channel),
-		incoming:    make(chan SocketMessage),
-		quitChannel: make(chan bool, 1),
+		channels: make(map[string]*Channel),
+		incoming: make(chan SocketMessage),
 	}
 }

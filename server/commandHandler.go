@@ -63,11 +63,11 @@ func handleLeave(s *Server, _ *Channel, c *Client, argsD ...string) {
 	}
 }
 func handleOnline(s *Server, channel *Channel, c *Client, _ ...string) {
-	online := fmt.Sprintf("\nList of users in room %s: ", channel.name)
+	online := fmt.Sprintf("List of users in room: %s: ", channel.name)
 	for _, participant := range channel.participants {
 		online += "@" + participant.Username + "," + " "
 	}
-	channel.broadcast(&packets.SystemMessage{Message: online})
+	c.sendData(&packets.SystemMessage{Message: online})
 }
 
 var commandHandlers = map[string]commandHandler{
